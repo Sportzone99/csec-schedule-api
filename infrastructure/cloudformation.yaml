@@ -1,0 +1,141 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: 'CSEC Schedule API - S3 bucket and Lambda function for hourly schedule updates'
+
+Parameters:
+  BucketName:
+    Type: String
+    Default: csec-schedule-api
+    Description: Name of the S3 bucket to store schedule data
+  
+  LambdaFunctionName:
+    Type: String
+    Default: csec-schedule-updater
+    Description: Name of the Lambda function
+
+Resources:
+  # S3 Bucket for storing schedule data
+  ScheduleBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !Ref BucketName
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: false
+        BlockPublicPolicy: false
+        IgnorePublicAcls: false
+        RestrictPublicBuckets: false
+      WebsiteConfiguration:
+        IndexDocument: index.html
+        ErrorDocument: error.html
+      CorsConfiguration:
+        CorsRules:
+          - AllowedHeaders:
+              - "*"
+            AllowedMethods:
+              - GET
+              - HEAD
+            AllowedOrigins:
+              - "*"
+            MaxAge: 3600
+
+  # Bucket Policy to make schedule.json publicly readable
+  ScheduleBucketPolicy:
+    Type: AWS::S3::BucketPolicy
+    Properties:
+      Bucket: !Ref ScheduleBucket
+      PolicyDocument:
+        Statement:
+          - Sid: PublicReadGetObject
+            Effect: Allow
+            Principal: "*"
+            Action: s3:GetObject
+            Resource: !Sub "${ScheduleBucket}/*"
+
+  # IAM Role for Lambda function
+  LambdaExecutionRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Sub "${LambdaFunctionName}-execution-role"
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+      Policies:
+        - PolicyName: S3Access
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - s3:PutObject
+                  - s3:PutObjectAcl
+                  - s3:GetObject
+                Resource: !Sub "${ScheduleBucket}/*"
+
+  # Lambda function (code will be uploaded separately)
+  ScheduleUpdaterFunction:
+    Type: AWS::Lambda::Function
+    Properties:
+      FunctionName: !Ref LambdaFunctionName
+      Runtime: nodejs20.x
+      Handler: index.handler
+      Role: !GetAtt LambdaExecutionRole.Arn
+      Timeout: 60
+      MemorySize: 256
+      Environment:
+        Variables:
+          S3_BUCKET_NAME: !Ref ScheduleBucket
+          S3_KEY: schedule.json
+      Code:
+        ZipFile: |
+          exports.handler = async (event) => {
+            return {
+              statusCode: 200,
+              body: JSON.stringify({ message: 'Please upload the Lambda code package' })
+            };
+          };
+
+  # CloudWatch Events Rule to trigger Lambda every hour
+  HourlyScheduleRule:
+    Type: AWS::Events::Rule
+    Properties:
+      Name: !Sub "${LambdaFunctionName}-hourly-trigger"
+      Description: Trigger schedule updater every hour
+      ScheduleExpression: rate(1 hour)
+      State: ENABLED
+      Targets:
+        - Arn: !GetAtt ScheduleUpdaterFunction.Arn
+          Id: ScheduleUpdaterTarget
+
+  # Permission for CloudWatch Events to invoke Lambda
+  LambdaInvokePermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      FunctionName: !Ref ScheduleUpdaterFunction
+      Action: lambda:InvokeFunction
+      Principal: events.amazonaws.com
+      SourceArn: !GetAtt HourlyScheduleRule.Arn
+
+Outputs:
+  BucketName:
+    Description: Name of the S3 bucket
+    Value: !Ref ScheduleBucket
+    Export:
+      Name: !Sub "${AWS::StackName}-BucketName"
+  
+  BucketURL:
+    Description: URL to access schedule.json
+    Value: !Sub "https://${ScheduleBucket}.s3.amazonaws.com/schedule.json"
+    Export:
+      Name: !Sub "${AWS::StackName}-BucketURL"
+  
+  LambdaFunctionArn:
+    Description: ARN of the Lambda function
+    Value: !GetAtt ScheduleUpdaterFunction.Arn
+    Export:
+      Name: !Sub "${AWS::StackName}-LambdaArn"
+

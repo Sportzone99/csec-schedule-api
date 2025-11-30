@@ -1,0 +1,11 @@
+{
+  "name": "csec-schedule-lambda",
+  "version": "1.0.0",
+  "description": "Lambda function to fetch and update schedule data in S3",
+  "main": "index.js",
+  "dependencies": {
+    "axios": "^1.6.0",
+    "@aws-sdk/client-s3": "^3.490.0"
+  }
+}
+

@@ -1,0 +1,19 @@
+{
+  "name": "csec-schedule-api",
+  "version": "1.0.0",
+  "description": "Unified schedule API for Calgary Flames, Wranglers, and Hitmen",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node server.js"
+  },
+  "keywords": ["hockey", "schedule", "api"],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "express": "^4.18.2",
+    "axios": "^1.6.0",
+    "cors": "^2.8.5"
+  }
+}
+
