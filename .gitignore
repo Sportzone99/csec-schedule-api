@@ -6,6 +6,9 @@ dist/
 build/
 lambda-deployment.zip
 response.json
+nll-api-response.json
+nll-endpoint-discovery.json
+.nll-token-cache.json
 *.zip
 *.swp
 *.swo

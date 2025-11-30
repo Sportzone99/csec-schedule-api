@@ -67,7 +67,7 @@ This guide will help you deploy the CSEC Schedule API to AWS using S3 and Lambda
 #### Step 1: Create S3 Bucket
 
 ```bash
-aws s3 mb s3://csec-schedule-api --region us-east-1
+aws s3 mb s3://csec-schedule-api --region ca-central-1
 ```
 
 #### Step 2: Configure S3 Bucket for Public Access

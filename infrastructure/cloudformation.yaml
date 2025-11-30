@@ -90,6 +90,7 @@ Resources:
         Variables:
           S3_BUCKET_NAME: !Ref ScheduleBucket
           S3_KEY: schedule.json
+          AWS_REGION: ca-central-1
       Code:
         ZipFile: |
           exports.handler = async (event) => {

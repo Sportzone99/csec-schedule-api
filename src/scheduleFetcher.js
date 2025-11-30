@@ -1,6 +1,8 @@
 const axios = require('axios');
 const { transformNHLData } = require('./transformers/nhlTransformer');
 const { transformHockeyTechData } = require('./transformers/hockeyTechTransformer');
+const { transformNLLData } = require('./transformers/nllTransformer');
+const { fetchNLLSchedule } = require('./utils/nllApi');
 
 const NHL_API_URL = 'https://api-web.nhle.com/v1/club-schedule-season/CGY/20252026';
 const WHL_API_URL = 'https://lscluster.hockeytech.com/feed/?feed=modulekit&view=schedule&client_code=whl&key=41b145a848f4bd67&fmt=json&season_id=289&team_id=202';
@@ -36,15 +38,26 @@ async function fetchAHLSchedule() {
   }
 }
 
+async function fetchNLLScheduleData() {
+  try {
+    const data = await fetchNLLSchedule();
+    return transformNLLData(data, 'NLL');
+  } catch (error) {
+    console.error('Error fetching NLL schedule:', error.message);
+    return [];
+  }
+}
+
 async function fetchUnifiedSchedule() {
-  const [nhlGames, whlGames, ahlGames] = await Promise.all([
+  const [nhlGames, whlGames, ahlGames, nllGames] = await Promise.all([
     fetchNHLSchedule(),
     fetchWHLSchedule(),
-    fetchAHLSchedule()
+    fetchAHLSchedule(),
+    fetchNLLScheduleData()
   ]);
 
   // Combine all games and sort by date
-  const allGames = [...nhlGames, ...whlGames, ...ahlGames];
+  const allGames = [...nhlGames, ...whlGames, ...ahlGames, ...nllGames];
   
   // Sort by date and time
   allGames.sort((a, b) => {
@@ -60,6 +73,8 @@ module.exports = {
   fetchUnifiedSchedule,
   fetchNHLSchedule,
   fetchWHLSchedule,
-  fetchAHLSchedule
+  fetchAHLSchedule,
+  fetchNLLScheduleData
 };
+
 
